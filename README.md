@@ -16,11 +16,16 @@ mv .env-example .env
 ```
 echo $HOME/homeserver/*/ | xargs -n 1 ln -s $HOME/homeserver/.env
 ```
-6. Create proxy docker network
+6. Fill ./netservices/custom.list-example with your values
+7. Rename file:
+```
+mv custom.list-example custom.list
+``` 
+8. Create proxy docker network
 ```
 docker network create proxy
 ```
-7. Exec services: (not tested)
+9. Exec services: (not tested)
 ```
 echo $HOME/homeserver/*/ | xargs -d " " -I {} docker-compose -f {}/docker-compose.yml up -d
 ```
@@ -37,3 +42,4 @@ echo $HOME/homeserver/*/ | xargs -d " " -I {} docker-compose -f {}/docker-compos
     - NodeRed
     - HomeAssistant
     - Joplin
+    - ...
