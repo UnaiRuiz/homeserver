@@ -1,0 +1,30 @@
+---
+version: "3.9"
+services:
+  portainer:
+    image: portainer/portainer-ce:2.9.3-alpine
+    container_name: portainer
+    command: -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - data:/data
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.portainer-secure.entrypoints=websecure"
+      - "traefik.http.routers.portainer-secure.rule=Host(`portainer.${DOMAIN}`)"
+      - "traefik.http.routers.portainer-secure.tls=true"
+      - "traefik.http.routers.portainer-secure.service=portainer"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+networks:
+  default:
+    external: true
+    name: proxy
+volumes:
+  data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${VOLUME_PATH}/portainer/data
+      o: bind

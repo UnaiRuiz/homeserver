@@ -1,0 +1,61 @@
+---
+version: "3.9"
+services:
+  app:
+    image: nextcloud:22.2.3
+    container_name: nextcloud
+    hostname: nextcloud.${DOMAIN}
+    environment:
+      - PUID=${PUID}
+      - PGID=${PUID}
+      - TZ=${TZ}
+      - NEXTCLOUD_DOMAIN_NAME=nextcloud.${DOMAIN}
+      - TRUSTED_PROXIES=${IP_ADDRESS}
+      - OVERWRITEPROTOCOL=https
+    volumes:
+      - app:/var/www/html
+      - ./000-default.conf:/etc/apache2/sites-available/000-default.conf
+    depends_on:
+      - db
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.nextcloud-secure.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud-secure.rule=Host(`nextcloud.${DOMAIN}`)"
+      - "traefik.http.routers.nextcloud-secure.tls=true"
+      - "traefik.http.routers.nextcloud-secure.middlewares=chain-nextcloud@file"
+      - "traefik.http.routers.nextcloud-secure.service=nextcloud"
+      - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
+  db:
+    image: mariadb:10.7
+    container_name: nextcloud_db
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW --innodb-file-per-table=1 --skip-innodb-read-only-compressed
+    environment:
+      - PUID=${PUID}
+      - PGID=${PUID}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - TZ=${TZ}
+    volumes:
+      - db:/var/lib/mysql
+    restart: unless-stopped
+networks:
+  default:
+    external: true
+    name: proxy
+volumes:
+   app:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${VOLUME_PATH}/nextcloud/app
+      o: bind
+   db:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${VOLUME_PATH}/nextcloud/db
+      o: bind

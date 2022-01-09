@@ -1,0 +1,61 @@
+---
+version: "3.9"
+services:
+  app:
+    depends_on:
+      - db
+    image: fireflyiii/core:version-5.6.8
+    container_name: fireflyiii
+    environment:
+      - DB_HOST=fireflyiii_db
+      - DB_DATABASE=${FIREFLY_MYSQL_DATABASE}
+      - DB_USERNAME=${FIREFLY_MYSQL_USER}
+      - DB_PORT=3306
+      - DB_CONNECTION=mysql
+      - DB_PASSWORD=${FIREFLY_MYSQL_PASSWORD}
+      - APP_KEY=${FIREFLY_APP_KEY}
+      - APP_URL=https://firefly.${DOMAIN}
+      - TRUSTED_PROXIES=**
+    volumes:
+      - upload:/var/www/html/storage/upload
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.firefly-secure.entrypoints=websecure"
+      - "traefik.http.routers.firefly-secure.rule=Host(`firefly.${DOMAIN}`)"
+      - "traefik.http.routers.firefly-secure.tls=true"
+      - "traefik.http.routers.firefly-secure.service=firefly"
+      - "traefik.http.services.firefly.loadbalancer.server.port=8080"
+  db:
+    image: mariadb:10.7
+    hostname: fireflyiii_db
+    container_name: fireflyiii_db
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - MYSQL_ROOT_PASSWORD=${FIREFLY_MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${FIREFLY_MYSQL_DATABASE}
+      - MYSQL_USER=${FIREFLY_MYSQL_USER}
+      - MYSQL_PASSWORD=${FIREFLY_MYSQL_PASSWORD}
+      - TZ=${TZ}
+    volumes:
+      - db:/var/lib/mysql
+    restart: unless-stopped
+networks:
+  default:
+    external: true
+    name: proxy
+volumes:
+   upload:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${VOLUME_PATH}/firefly_iii/firefly_iii_upload
+      o: bind
+   db:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${VOLUME_PATH}/firefly_iii/firefly_iii_db
+      o: bind

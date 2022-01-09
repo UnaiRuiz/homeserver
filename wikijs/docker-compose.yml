@@ -1,0 +1,39 @@
+---
+version: "3.9"
+services:
+  wikijs:
+    image: lscr.io/linuxserver/wikijs:2.5.219
+    container_name: wikijs
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - config:/config
+      - data:/data
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.wiki-secure.entrypoints=websecure"
+      - "traefik.http.routers.wiki-secure.rule=Host(`wiki.${DOMAIN}`)"
+      - "traefik.http.routers.wiki-secure.tls=true"
+      - "traefik.http.routers.wiki-secure.service=wiki"
+      - "traefik.http.services.wiki.loadbalancer.server.port=3000"
+networks:
+  default:
+    external: true
+    name: proxy
+volumes:
+   config:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${VOLUME_PATH}/wikijs/config
+      o: bind
+   data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${VOLUME_PATH}/wikijs/data
+      o: bind

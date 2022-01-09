@@ -1,0 +1,23 @@
+---
+version: '3.9'
+services:
+  traefik:
+    image: traefik:v2.5
+    container_name: traefik
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/traefik.yml:ro
+      - ./rules:/rules:ro
+      - ./certs:/certs:ro
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+networks:
+  default:
+    external: true
+    name: proxy
